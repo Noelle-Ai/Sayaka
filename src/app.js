@@ -1,15 +1,17 @@
-const app = express();
 const bodyParser = require('body-parser');
 const canvas = require('canvas');
 const cors = require('cors');
 const express = require('express');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const StackBlur = require('stackblur-canvas');
+
+const app = express();
 
 const rateLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 10000,
-    message: 'Too many requests, try it later',
+    message: 'Too many requests, please try it later',
 });
 
 app.use(bodyParser.json());
@@ -28,12 +30,12 @@ app.get('/api/blur', (req, res) => {
     canvas
         .loadImage(url)
         .then((img) => {
-            const canvas = canvas.createCanvas(img.width, img.height);
-            const ctx = canvas.getContext('2d');
+            const Canvas = canvas.createCanvas(img.width, img.height);
+            const ctx = Canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            StackBlur.canvasRGBA(canvas, 0, 0, img.width, img.height, 10);
+            StackBlur.canvasRGBA(Canvas, 0, 0, img.width, img.height, 10);
             res.set('Content-Type', 'image/png');
-            return canvas.createPNGStream().pipe(res);
+            return Canvas.createPNGStream().pipe(res);
         })
         .catch((error) => {
             console.error(error);
