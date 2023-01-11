@@ -1,6 +1,8 @@
 const { Router } = require('express');
 const canvas = require('canvas');
-const StackBlur = require('stackblur-canvas');
+const jimp = require('jimp');
+const path = require('path');
+const stackblur = require('stackblur-canvas');
 
 const router = Router();
 
@@ -17,7 +19,7 @@ router.get('/blur', (req, res) => {
             const Canvas = canvas.createCanvas(img.width, img.height);
             const ctx = Canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            StackBlur.canvasRGBA(Canvas, 0, 0, img.width, img.height, 10);
+            stackblur.canvasRGBA(Canvas, 0, 0, img.width, img.height, 10);
             res.set('Content-Type', 'image/png');
             return Canvas.createPNGStream().pipe(res);
         })
@@ -53,6 +55,47 @@ router.get('/invert', (req, res) => {
             return Canvas.createPNGStream().pipe(res);
         })
         .catch((error) => {
+            res.status(500).json({
+                message: 'Something went wrong. Please check your URL',
+            });
+        });
+});
+
+router.get('/lgbt', (req, res) => {
+    const url = req.query.url;
+
+    if (!url) {
+        return res.status(400).json({ error: 'Image url is required' });
+    }
+
+    canvas
+        .loadImage(url)
+        .then((img) => {
+            jimp.read(path.join(__dirname, '..', '..', 'assets', 'img', 'lgbt.png'), (err, lgbt) => {
+                if (err) throw err;
+                lgbt.opacity(0.5);
+
+                const Canvas = canvas.createCanvas(img.width, img.height);
+                const ctx = Canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                const lgbtCanvas = canvas.createCanvas(img.width, img.height);
+                lgbtCanvas.height = lgbt.bitmap.height;
+                lgbtCanvas.width = lgbt.bitmap.width;
+
+                const lgbtCtx = lgbtCanvas.getContext('2d');
+                lgbt.getBase64(jimp.MIME_PNG, (err, src) => {
+                    if (err) throw err;
+                    canvas.loadImage(src).then((image) => {
+                        lgbtCtx.drawImage(image, 0, 0, lgbtCanvas.width, lgbtCanvas.height);
+                        ctx.drawImage(lgbtCanvas, 0, 0, img.width, img.height);
+                        res.set('Content-Type', 'image/png');
+                        return Canvas.createPNGStream().pipe(res);
+                    });
+                });
+            });
+        })
+        .catch((error) => {
+            console.log(error)
             res.status(500).json({
                 message: 'Something went wrong. Please check your URL',
             });
