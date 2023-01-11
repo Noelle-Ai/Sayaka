@@ -71,25 +71,24 @@ router.get('/lgbt', (req, res) => {
     canvas
         .loadImage(url)
         .then((img) => {
-            jimp.read(path.join(__dirname, '..', '..', 'assets', 'img', 'lgbt.png'), (err, lgbt) => {
+            jimp.read(path.join(__dirname, '..', '..', 'assets', 'img', 'lgbt.png'), (err, lgbtImg) => {
                 if (err) throw err;
-                lgbt.opacity(0.5);
+                lgbtImg.opacity(0.5);
 
-                const Canvas = canvas.createCanvas(img.width, img.height);
-                const ctx = Canvas.getContext('2d');
+                const imgCanvas = canvas.createCanvas(img.width, img.height);
+                const ctx = imgCanvas.getContext('2d');
+                const lgbtCanvas = canvas.createCanvas(lgbtImg.bitmap.width, lgbtImg.bitmap.height);
+
                 ctx.drawImage(img, 0, 0);
-                const lgbtCanvas = canvas.createCanvas(img.width, img.height);
-                lgbtCanvas.height = lgbt.bitmap.height;
-                lgbtCanvas.width = lgbt.bitmap.width;
 
                 const lgbtCtx = lgbtCanvas.getContext('2d');
-                lgbt.getBase64(jimp.MIME_PNG, (err, src) => {
+                lgbtImg.getBase64(jimp.MIME_PNG, (err, src) => {
                     if (err) throw err;
                     canvas.loadImage(src).then((image) => {
                         lgbtCtx.drawImage(image, 0, 0, lgbtCanvas.width, lgbtCanvas.height);
                         ctx.drawImage(lgbtCanvas, 0, 0, img.width, img.height);
                         res.set('Content-Type', 'image/png');
-                        return Canvas.createPNGStream().pipe(res);
+                        return imgCanvas.createPNGStream().pipe(res);
                     });
                 });
             });
